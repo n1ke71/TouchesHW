@@ -26,6 +26,7 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
+    
     self.checkersArray   = [NSMutableArray array];
     self.cagesArray      = [NSMutableArray array];
     self.freeCagesSet    = [NSMutableSet set];
@@ -35,8 +36,9 @@
     UIView* board     = [[UIView alloc]initWithFrame:boardRect];
     board.backgroundColor = [UIColor grayColor];
     [self.view addSubview:board];
-    board.autoresizingMask =UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleWidth|                   UIViewAutoresizingFlexibleRightMargin |UIViewAutoresizingFlexibleTopMargin |
-    UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleBottomMargin ;
+    board.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin |
+                            UIViewAutoresizingFlexibleTopMargin  | UIViewAutoresizingFlexibleBottomMargin;
+    
     self.boardView = board;
     
     CGFloat sideOfCage = CGRectGetWidth(self.view.bounds) / 8 ;
@@ -66,8 +68,8 @@
             }
             else {
                 
-                
-                [self.freeCagesSet addObject:cageView];
+                NSValue* value = [NSValue valueWithCGPoint:cageView.center];
+                [self.freeCagesSet addObject:value];
                 
             }
             
@@ -161,7 +163,6 @@
             }];
             
             
-            
         }
         else {
             [UIView animateWithDuration:0.3f animations:^{
@@ -175,8 +176,8 @@
         }
         
         
-        
     }
+    
     
     
 }
@@ -189,6 +190,26 @@
     }];
     
     
+    if (self.draggingView) {
+        
+        
+        [self.freeCagesSet addObject:[NSValue valueWithCGPoint:self.positionBefore]];
+        
+        CGPoint newCenter = [self findFreeCellFor:CGPointMake(self.draggingView.center.x + self.touchOffset.x,
+                                                              self.draggingView.center.y + self.touchOffset.y)];
+        
+        [UIView animateWithDuration:0.3f animations:^{
+            
+            [self.boardView bringSubviewToFront:self.draggingView];
+            
+            self.draggingView.center = newCenter;
+            
+            self.draggingView = nil;
+            self.positionBefore = CGPointZero;
+        }];
+        
+    }
+        
 }
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event{
     
@@ -202,7 +223,30 @@
     
 }
 
-
-
+-(CGPoint) findFreeCellFor:(CGPoint) pointChecker{
+    
+    CGFloat minLenght    = CGRectGetWidth(self.boardView.bounds) * 2;
+    CGPoint nearestPoint = CGPointZero;
+    // NSLog(@"minLenght=%f ",minLenght);
+    NSArray* arrayPoint = [self.freeCagesSet allObjects];
+    
+    for (int i = 0; i < [arrayPoint count] ; i++) {
+        
+        CGPoint point = [[arrayPoint objectAtIndex:i] CGPointValue];
+        CGFloat dx    = fabs(point.x -  pointChecker.x);
+        CGFloat dy    = fabs(point.y -  pointChecker.y);
+        
+        //   NSLog(@"dx%f dy=%f point=%@",dx,dy, NSStringFromCGPoint(point));
+        CGFloat length = sqrtf(powf(dx, 2) + powf(dy, 2));
+        //   NSLog(@"length=%f ",length);
+        if (length < minLenght) {
+            
+            minLenght    = length;
+            nearestPoint = point;
+        }
+    }
+    
+    return nearestPoint;
+}
 
 @end
